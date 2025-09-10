@@ -9,6 +9,7 @@ const False = false //making sure Python conventions don't bite me later
 const u = Math.PI/144
 keyCool = false
 enablePhysics = false
+showHint = true
 score = 0
 cv = document.getElementById("canvas") //adding to object didn't work for some reason
 function startGaming(){
@@ -19,6 +20,8 @@ function startGaming(){
     console.log("start gaming, aim: "+aimPiece)
     aimBackPiece = new circle(70,0,cv.height,"#00aaff",border=5,border_color=false)
     targetPiece = new target(500,cv.height-21,100,20)
+    hintText = new text("Press W/S to aim, F to fire",400,100)
+    scoreText = new text("0",800,300)
     //testPiece = new circle(70,100,cv.height-100,"#0088ff",border=5,border_color=false,arc_start=Math.PI,arc_end=3*Math.PI/2)
 }
 var ga = {
@@ -33,7 +36,7 @@ var ga = {
         this.ctx.clearRect(0,0,cv.width,cv.height)
     }
 }
-function circle(radius, x, y, color="#66ffcf",border=0,border_color=false,dofill=true,arc_start=0,arc_end=2*Math.PI) {
+function circle(radius, x, y, color="#66eec0",border=0,border_color=false,dofill=true,arc_start=0,arc_end=2*Math.PI) {
     if (border_color) {this.borderColor = border_color}
     else {this.borderColor = color}
     this.radius = radius
@@ -81,6 +84,23 @@ function target(x,y=cv.height-1,width=100,height=20,color="#dd5500") {
         this.x += Math.round(this.velX)
         ctx.fillRect(this.x,this.y,width,height)
     }
+}
+function text(text,x,y,color="#aaaaaa",font="30px sans-serif") {
+    this.text = text
+    this.x = x
+    this.y = y
+    this.color = color
+    this.defaultColor = function(defcolor=color) {console.log("defcolor, prev "+this.color);this.color = defcolor}
+    this.pieceUpdate = function() {
+        if (true) {
+            console.log(this.x+" "+this.y+" text update "+this.text+" color "+this.color)
+        }
+        ctx = ga.ctx
+        ctx.font=font
+        ctx.fillStyle = color
+        ctx.fillText(this.text,this.x,this.y)
+    }
+    this.pieceUpdate()
 }
 function phys_dump(obj) {
     console.log("dump: x "+obj.x+"velX"+obj.velX+" y "+obj.y+" velY "+obj.velY)
@@ -134,7 +154,7 @@ function update() {
         }
     } //peak direction flipping code
     }
-    if (ga.key == "f" && !enablePhysics) {enablePhysics = true; giveImpulse(aiming,11,circlePiece)}
+    if (ga.key == "f" && !enablePhysics) {enablePhysics = true; showHint = false; giveImpulse(aiming,11,circlePiece)}
     else if (ga.key == "w" && keyCool) {aimUp();keyCool = false}
     else if (ga.key == "s" && keyCool) {aimDown();keyCool = false}
     if (!ga.key) {keyCool = false}
@@ -144,8 +164,16 @@ function update() {
     } else {fineTickCount += 1}
     if (enablePhysics) {
         if (check_collision(circlePiece.bounds,targetPiece.bounds))
-            {score += 1;console.log("we stay winning "+score);phys_reset();targetPiece.randX()}
+            {score += 1
+            console.log("we stay winning "+score)
+            phys_reset()
+            targetPiece.randX()
+            scoreText.text = score
+            scoreText.color = "#22ff22"
+            colorTimeout = setTimeout(scoreText.defaultColor,1000)
+        }
     }
+    if (showHint) {hintText.pieceUpdate()}
     aimPiece.arcStart = aiming-2*u
     aimPiece.arcEnd = aiming+2*u
     //console.log(aimPiece.arcStart+" "+0.5*aiming/u+" "+aimPiece.arcEnd)
@@ -153,6 +181,7 @@ function update() {
     aimBackPiece.pieceUpdate()
     aimPiece.pieceUpdate()
     targetPiece.pieceUpdate()
+    scoreText.pieceUpdate()
     //testPiece.pieceUpdate()
 }
 aiming = 2*Math.PI-16*u
